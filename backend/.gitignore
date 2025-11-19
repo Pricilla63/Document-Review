@@ -1,0 +1,6 @@
+package.json
+requirements.txt
+.env
+__pycache__/
+output/
+Finance_AP
