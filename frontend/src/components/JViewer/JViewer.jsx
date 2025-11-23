@@ -11,6 +11,9 @@ import {
 import { UserContext } from "../../context/UserContext";
 
 const jsonViewFunction = (data, action) => {
+  // Add debug logging
+  console.log("JSON View Data:", data);
+  
   return (
     <div
       style={{
@@ -22,7 +25,7 @@ const jsonViewFunction = (data, action) => {
       }}
     >
       <ReactJson
-        src={data}
+        src={data || { message: "No data available" }}
         name={false}
         collapsed={2}
         enableClipboard={false}
@@ -42,7 +45,12 @@ const JViewer = ({ data }) => {
     setSelectedDocType,
   } = useContext(UserContext);
   const [selectedDate, setSelectedDate] = useState(feedbackDates[0]);
-  const [tabIndex, setTabIndex] = useState(0); // Control tab index
+  const [tabIndex, setTabIndex] = useState(0);
+
+  // Debug: Log what data we're receiving
+  console.log("JViewer - props data:", data);
+  console.log("JViewer - context jsonData:", jsonData);
+  console.log("JViewer - selectedDocType:", selectedDocType);
 
   const handleTabChange = ({ selectedIndex }) => {
     setTabIndex(selectedIndex);
@@ -52,6 +60,9 @@ const JViewer = ({ data }) => {
     }
   };
 
+  // Determine which data to display
+  const displayData = data || jsonData;
+
   return (
     <div style={{ margin: "1rem" }}>
       <Tabs selectedIndex={tabIndex} onChange={handleTabChange}>
@@ -60,7 +71,9 @@ const JViewer = ({ data }) => {
           <Tab>Feedback History</Tab>
         </TabList>
         <TabPanels>
-          <TabPanel>{jsonViewFunction(jsonData, "default")}</TabPanel>
+          <TabPanel>
+            {jsonViewFunction(displayData, "default")}
+          </TabPanel>
           <TabPanel>
             <div style={{ marginBottom: "1rem", maxWidth: "300px" }}>
               <Dropdown

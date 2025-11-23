@@ -1,95 +1,157 @@
-// // src/services/api.js
+
+// services/api.js
 import axios from 'axios';
 
-// // Your Flask backend is running on port 5000
-// const API_BASE_URL = 'http://localhost:5000';
+const API_BASE = 'http://localhost:5000';
 
-// const api = axios.create({
-//   baseURL: API_BASE_URL,
-//   timeout: 30000,
-// });
+// Transform backend response to frontend expected format
+const transformBackendData = (backendData) => {
+  if (!backendData || !backendData.data || !backendData.data[0]) {
+    return null;
+  }
 
-// export const invoiceAPI = {
-//   // Process single invoice file
-//   processInvoice: async (file) => {
-//     const formData = new FormData();
-//     formData.append('file', file); // Field name should be 'file'
-    
-//     const response = await api.post('/upload-pdf', formData, {
-//       headers: {
-//         'Content-Type': 'multipart/form-data',
-//       },
-//     });
-//     return response.data;
-//   },
+  const invoiceData = backendData.data[0];
+  const fields = invoiceData.fields || {};
+  const items = invoiceData.items || [];
 
-//   // Process uploaded files for extraction
-//   processUploadedFiles: async () => {
-//     const response = await api.post('/process-uploaded-files');
-//     return response.data;
-//   },
+  // Transform nested field structure to flat structure
+  const extraction_json = {};
+  
+  // Map backend field names to frontend field names
+  const fieldNameMapping = {
+    "VendorName": "Vendor Name",
+    "VendorAddress": "Vendor Address", 
+    "VendorCountry": "Vendor Country",
+    "VendorTaxId": "Vendor Tax ID (VAT/GST/TIN/W9, etc.)",
+    "VendorContactEmail": "Vendor Contact Email",
+    "VendorPhone": "Vendor Phone",
+    "VendorBankName": "Vendor Bank Name",
+    "VendorBankAccountNumber": "Vendor Bank Account Number",
+    "VendorBankDetails": "Vendor Bank Details (Account/IBAN/SWIFT/Routing No)",
+    "VendorContactPerson": "Vendor Contact Person",
+    "VendorWebsite": "Vendor Website (if applicable)",
+    "CustomerName": "Client Name or Company Name",
+    "BillingAddress": "Billing Address",
+    "ShippingAddress": "Shipping Address (if different)",
+    "CustomerPhone": "Phone Number",
+    "CustomerEmail": "Email Address (if applicable)",
+    "CustomerTaxId": "Client Tax ID (if applicable)",
+    "CustomerContactPerson": "Contact Person",
+    "InvoiceId": "Invoice Number",
+    "InvoiceDate": "Invoice Date",
+    "DueDate": "Due Date",
+    "InvoiceCurrency": "Invoice Currency",
+    "InvoiceType": "Invoice Type",
+    "PurchaseOrder": "PO Number",
+    "PaymentTerms": "Payment Terms",
+    "PaymentMethod": "Payment Method",
+    "CostCenter": "Cost Center / Project Code (if printed)",
+    "ServicePeriodStart": "Service period start",
+    "ServicePeriodEnd": "Service period end",
+    "LineItems_Count": "LineItems_Count",
+    "TotalTax": "Total Tax Amount",
+    "TaxTypeBreakdown": "Tax Type Breakdown (VAT/GST/PST/IGST etc.)",
+    "WithholdingTax": "Withholding Tax",
+    "Subtotal": "Subtotal",
+    "ShippingHandling": "Shipping / Handling / Fees",
+    "Surcharges": "Surcharges",
+    "InvoiceTotal": "Total Invoice Amount",
+    "AmountPaid": "Amount Paid",
+    "AmountDue": "Amount Due",
+    "Notes": "Notes / Terms",
+    "QRCode": "QR Code / IRN / ZATCA ID (region-specific)",
+    "CompanyRegistration": "Company Registration Number",
+    "ApprovalWorkflowID": "Approval Workflow ID",
+    "ApprovalRequired": "Approval Required",
+    "ApproverList": "Approver List / Roles",
+    "ApprovalStatus": "Approval Status",
+    "ApprovalTimestamps": "Approval Timestamps"
+  };
 
-//   // List uploaded files
-//   listUploadedFiles: async () => {
-//     const response = await api.get('/list-uploaded-files');
-//     return response.data;
-//   },
+  // Transform the data
+  Object.keys(fieldNameMapping).forEach(backendField => {
+    const frontendField = fieldNameMapping[backendField];
+    if (fields[backendField] && fields[backendField].value !== "na") {
+      extraction_json[frontendField] = fields[backendField].value;
+    } else {
+      extraction_json[frontendField] = ""; // Empty string instead of "na"
+    }
+  });
 
-//   // Health check
-//   healthCheck: async () => {
-//     const response = await api.get('/health');
-//     return response.data;
-//   },
-// };
+  // Transform line items
+  const line_items = items.map(item => ({
+    "Description": item.Description || "",
+    "Item Number or Code (if any)": item.ItemCode || "",
+    "Quantity": item.Quantity || 0,
+    "UOM": item.UnitOfMeasure || "",
+    "Unit Price": item.UnitPrice || 0,
+    "Discount (if any)": item.Discount || 0,
+    "Net Amount": item.NetAmount || 0,
+    "Tax %": item.TaxRate || 0,
+    "Tax Amount": item.TaxAmount || 0,
+    "Gross Amount": item.GrossAmount || 0
+  }));
 
-// export default api;
-
-
-// src/services/api.js
-const API_BASE_URL = 'http://localhost:5000';
+  return {
+    extraction_json,
+    line_items,
+    extraction_json_with_coordinates: {}, // Add if you have coordinate data
+    source_file: invoiceData.source_file
+  };
+};
 
 export const invoiceAPI = {
-  // Process single invoice file - direct processing
-  processInvoice: async (file) => {
+  async healthCheck() {
     try {
-      console.log('Starting file upload and processing...');
-      
+      const response = await axios.get(`${API_BASE}/health`);
+      return response.data;
+    } catch (error) {
+      throw new Error('Backend connection failed');
+    }
+  },
+
+  async processInvoice(file) {
+    try {
       const formData = new FormData();
       formData.append('file', file);
-      
-      const response = await fetch(`${API_BASE_URL}/api/process-invoice`, {
-        method: 'POST',
-        body: formData,
+
+      console.log('📤 Uploading file to backend...', file.name);
+
+      const response = await axios.post(`${API_BASE}/api/process-invoice`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 60000, // 60 second timeout
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('✅ Backend response:', response.data);
+
+      if (response.data.success) {
+        // Transform the backend data to frontend format
+        const transformedData = transformBackendData(response.data);
+        
+        if (transformedData) {
+          return {
+            success: true,
+            data: transformedData,
+            message: response.data.message || 'Invoice processed successfully'
+          };
+        } else {
+          throw new Error('Failed to transform backend data');
+        }
+      } else {
+        throw new Error(response.data.error || 'Backend processing failed');
       }
-
-      const result = await response.json();
-      console.log('Processing result:', result);
-      return result;
-      
     } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
-    }
-  },
-
-  // Health check
-  healthCheck: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/health`);
+      console.error('❌ API call failed:', error);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('Cannot connect to backend. Make sure Flask server is running on port 5000.');
+      } else if (error.response) {
+        throw new Error(`Backend error: ${error.response.data.error || error.response.statusText}`);
+      } else {
+        throw new Error(`Network error: ${error.message}`);
       }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Health check failed:', error);
-      throw error;
     }
-  },
+  }
 };
-export default invoiceAPI;

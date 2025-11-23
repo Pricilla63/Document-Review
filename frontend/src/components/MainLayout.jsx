@@ -1,5 +1,6 @@
+// // MainLayout.jsx - Updated button placement
 // import { schemaMap } from "../config/schemaMap.js";
-// import { Dropdown } from "carbon-components-react";
+// import { Dropdown, Accordion } from "carbon-components-react";
 // import React, { useContext, useState } from "react";
 // import { UserContext } from "../context/UserContext.jsx";
 // import { RightPanelCloseFilled, RightPanelOpen } from "@carbon/icons-react";
@@ -16,6 +17,8 @@
 //     selectedDocType,
 //     setSelectedDocType,
 //     DOC_TYPES,
+//     currentFile,
+//     goToUpload
 //   } = useContext(UserContext);
 
 //   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
@@ -23,6 +26,14 @@
 //   const [pageRenderReady, setPageRenderReady] = useState(false);
 
 //   const extractionData = jsonData?.extraction_json || {};
+
+//   // Debug: Log what data is available
+//   console.log("📋 MainLayout - jsonData:", jsonData);
+//   console.log("📋 MainLayout - extraction_json:", jsonData?.extraction_json);
+//   if (jsonData?.extraction_json) {
+//     console.log("📋 MainLayout - extraction_json keys:", Object.keys(jsonData.extraction_json));
+//     console.log("📋 MainLayout - extraction_json field count:", Object.keys(jsonData.extraction_json).length);
+//   }
 
 //   const toggleRightPanel = () => {
 //     setIsRightPanelOpen((prev) => !prev);
@@ -32,45 +43,97 @@
 //     const schema = schemaMap[type];
 //     if (!schema)
 //       return (
-//         <div
-//           style={{
-//             padding: "10px 20px",
-//           }}
-//         >
+//         <div style={{ padding: "10px 20px" }}>
 //           <p>We are working on this document type</p>
 //         </div>
 //       );
 
 //     return (
-//       <GenericInputFields
-//         data={jsonData}
-//         schema={schema}
-//         setHoveredKey={setHoveredKey}
-//       />
+//       <Accordion>
+//         <GenericInputFields
+//           data={jsonData}
+//           schema={schema}
+//           setHoveredKey={setHoveredKey}
+//         />
+//       </Accordion>
 //     );
 //   };
+
+//   // Calculate extraction statistics for Invoice documents
+//   const getExtractionStats = () => {
+//     if (selectedDocType !== "Invoice" || !jsonData?.extraction_json) return null;
+
+//     const extractedFields = Object.keys(jsonData.extraction_json).filter(
+//       key => jsonData.extraction_json[key] && 
+//              jsonData.extraction_json[key] !== "" &&
+//              jsonData.extraction_json[key] !== null
+//     ).length;
+
+//     const totalFields = 56; // Total invoice fields
+//     const extractionRate = ((extractedFields / totalFields) * 100).toFixed(1);
+
+//     return { extractedFields, totalFields, extractionRate };
+//   };
+
+//   const stats = getExtractionStats();
 
 //   return (
 //     <div
 //       className="flex flex-col md:flex-row gap-4 p-4 bg-gray-50 overflow-hidden"
 //       style={{
 //         padding: "10px 20px",
-//         // marginTop: "3%" "To hide the header"
 //       }}
 //     >
 //       {/* Left Side - PViewer */}
 //       <div className="w-full md:w-1/2">
-//         {/* <div className="flex flex-row justify-between items-center mb-2 px-2">
-//           <p>
-//             Loan ID: <b style={{ color: themeStyle.primary }}>{"9014960"}</b>
-//           </p>
-//           <p>
-//             Borrower Name:{" "}
-//             <b style={{ color: themeStyle.primary }}>
-//               {extractionData?.["Account Holder"] || "BOWWEN F DIAMOND"}
-//             </b>
-//           </p>
-//         </div> */}
+//         {/* File Info and Back Button in same row */}
+//         <div className="flex justify-between items-center mb-4">
+//           {/* File Info */}
+//           {/* {currentFile && (
+//             <div className="px-2 bg-white p-3 rounded-lg shadow-sm flex-1 mr-4">
+//               <p style={{ fontSize: '14px', margin: 0 }}>
+//                 <strong>File:</strong> {currentFile.name}
+//                 <span style={{ marginLeft: "10px", color: "#666" }}>
+//                   ({Math.round(currentFile.size / 1024)} KB)
+//                 </span>
+//               </p>
+//             </div>
+//           )} */}
+          
+//           {/* Back to Upload Button - Moved to right side */}
+//           <button
+//             onClick={goToUpload}
+//             style={{
+//               padding: "8px 16px",
+//               backgroundColor: themeStyle.primary,
+//               color: "white",
+//               border: "none",
+//               borderRadius: "4px",
+//               cursor: "pointer",
+//               fontSize: "14px",
+//               whiteSpace: "nowrap",
+//               marginLeft: "auto"
+//             }}
+//           >
+//             ← Back to Upload
+//           </button>
+//         </div>
+
+//         {/* Extraction Statistics for Invoice */}
+//         {/* {stats && (
+//           <div className="flex flex-row justify-between items-center mb-2 px-2 bg-white p-3 rounded-lg shadow-sm">
+//             <div>
+//               <p style={{ fontSize: '14px', margin: 0 }}>
+//                 Extracted: <b style={{ color: themeStyle.primary }}>{stats.extractedFields}/{stats.totalFields}</b> fields
+//               </p>
+//             </div>
+//             <div>
+//               <p style={{ fontSize: '14px', margin: 0 }}>
+//                 Completion: <b style={{ color: themeStyle.primary }}>{stats.extractionRate}%</b>
+//               </p>
+//             </div>
+//           </div>
+//         )} */}
 
 //         <div className="border rounded-2xl shadow-md p-4 bg-white">
 //           <PViewer
@@ -89,41 +152,40 @@
 //             isRightPanelOpen ? "w-1/2" : "w-full"
 //           }`}
 //         >
-//           <div className="flex justify-end mb-2 pr-2">
-//             {!isRightPanelOpen ? (
-//               <RightPanelOpen
-//                 size={24}
-//                 onClick={toggleRightPanel}
-//                 className="cursor-pointer"
-//               />
-//             ) : (
-//               <RightPanelCloseFilled
-//                 size={24}
-//                 onClick={toggleRightPanel}
-//                 className="cursor-pointer"
-//               />
-//             )}
-//           </div>
-//           <div
-//             className="border rounded-2xl shadow-md p-4 bg-white"
-//             style={{ height: "85dvh", marginTop: "1%", overflowY: "auto" }}
-//           >
-//             <div
-//               style={{
-//                 padding: "10px 20px",
-//               }}
-//             >
+//           <div className="flex justify-between items-center mb-2 pr-2">
+//             <div style={{ flex: 1 }}>
 //               <Dropdown
 //                 id="inline"
 //                 titleText="Document Type"
 //                 initialSelectedItem={selectedDocType}
 //                 label={selectedDocType}
 //                 items={DOC_TYPES}
-//                 onChange={({ selectedItem }) =>
-//                   setSelectedDocType(selectedItem)
-//                 }
+//                 onChange={({ selectedItem }) => setSelectedDocType(selectedItem)}
+//                 style={{ minWidth: '200px' }}
 //               />
 //             </div>
+//             <div>
+//               {!isRightPanelOpen ? (
+//                 <RightPanelOpen
+//                   size={24}
+//                   onClick={toggleRightPanel}
+//                   className="cursor-pointer"
+//                   title="Show JSON View"
+//                 />
+//               ) : (
+//                 <RightPanelCloseFilled
+//                   size={24}
+//                   onClick={toggleRightPanel}
+//                   className="cursor-pointer"
+//                   title="Hide JSON View"
+//                 />
+//               )}
+//             </div>
+//           </div>
+//           <div
+//             className="border rounded-2xl shadow-md p-4 bg-white"
+//             style={{ height: "85dvh", marginTop: "1%", overflowY: "auto" }}
+//           >
 //             {displayContent(selectedDocType)}
 //           </div>
 //         </div>
@@ -155,7 +217,7 @@
 // export default MainLayout;
 
 
-
+// MainLayout.jsx - Without file name display
 import { schemaMap } from "../config/schemaMap.js";
 import { Dropdown, Accordion } from "carbon-components-react";
 import React, { useContext, useState } from "react";
@@ -174,6 +236,8 @@ const MainLayout = () => {
     selectedDocType,
     setSelectedDocType,
     DOC_TYPES,
+    currentFile,
+    goToUpload
   } = useContext(UserContext);
 
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
@@ -206,24 +270,6 @@ const MainLayout = () => {
     );
   };
 
-  // Calculate extraction statistics for Invoice documents
-  const getExtractionStats = () => {
-    if (selectedDocType !== "Invoice" || !jsonData?.extraction_json) return null;
-
-    const extractedFields = Object.keys(jsonData.extraction_json).filter(
-      key => jsonData.extraction_json[key] && 
-             jsonData.extraction_json[key] !== "na" && 
-             jsonData.extraction_json[key] !== ""
-    ).length;
-
-    const totalFields = 56; // Total invoice fields
-    const extractionRate = ((extractedFields / totalFields) * 100).toFixed(1);
-
-    return { extractedFields, totalFields, extractionRate };
-  };
-
-  const stats = getExtractionStats();
-
   return (
     <div
       className="flex flex-col md:flex-row gap-4 p-4 bg-gray-50 overflow-hidden"
@@ -233,22 +279,26 @@ const MainLayout = () => {
     >
       {/* Left Side - PViewer */}
       <div className="w-full md:w-1/2">
-        {/* Extraction Statistics for Invoice */}
-        {stats && (
-          <div className="flex flex-row justify-between items-center mb-2 px-2 bg-white p-3 rounded-lg shadow-sm">
-            <div>
-              <p style={{ fontSize: '14px', margin: 0 }}>
-                Extracted: <b style={{ color: themeStyle.primary }}>{stats.extractedFields}/{stats.totalFields}</b> fields
-              </p>
-            </div>
-            <div>
-              <p style={{ fontSize: '14px', margin: 0 }}>
-                Completion: <b style={{ color: themeStyle.primary }}>{stats.extractionRate}%</b>
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Only Back Button - No file name display */}
+        <div className="flex justify-end items-center mb-4">
+          <button
+            onClick={goToUpload}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: themeStyle.primary,
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
+              whiteSpace: "nowrap"
+            }}
+          >
+            ← Back to Upload
+          </button>
+        </div>
 
+        {/* PDF Viewer */}
         <div className="border rounded-2xl shadow-md p-4 bg-white">
           <PViewer
             hoveredKey={hoveredKey}

@@ -1,178 +1,3 @@
-// import { Accordion, AccordionItem, TextInput } from "carbon-components-react";
-
-// import { useEffect, useState } from "react";
-
-// const GenericInputFields = ({ data, schema, setHoveredKey }) => {
-//   const extractionData = data?.extraction_json || {};
-
-//   const [formData, setFormData] = useState(extractionData);
-
-//   useEffect(() => {
-//     setFormData(extractionData);
-//   }, [extractionData]);
-
-//   const handleMouseEnter = (key, pageNum) => {
-//     if (key && pageNum != null) {
-//       setHoveredKey({ key, pageNum });
-//     }
-//   };
-
-//   const handleMouseLeave = () => {
-//     setHoveredKey({ key: null, pageNum: null });
-//   };
-
-//   const handleInputChange = (field, value) => {
-//     const oldValue = formData[field];
-
-//     const newValue =
-//       typeof oldValue === "object" && oldValue !== null && "value" in oldValue
-//         ? { ...oldValue, value }
-//         : value;
-
-//     setFormData((prev) => ({
-//       ...prev,
-
-//       [field]: newValue,
-//     }));
-//   };
-
-//   const handleSectionChange = (index, field, value) => {
-//     const sectionData = [...(formData[schema.sectionKey] || [])];
-
-//     if (!sectionData[index]) sectionData[index] = {};
-
-//     const oldFieldValue = sectionData[index][field];
-
-//     sectionData[index][field] =
-//       typeof oldFieldValue === "object" &&
-//       oldFieldValue !== null &&
-//       "value" in oldFieldValue
-//         ? { ...oldFieldValue, value }
-//         : value;
-
-//     setFormData((prev) => ({
-//       ...prev,
-
-//       [schema.sectionKey]: sectionData,
-//     }));
-//   };
-
-//   const flatFields = schema.flatFields || [];
-
-//   const sectionData = formData[schema.sectionKey] || [];
-
-//   const titleField = schema.sectionTitleField;
-
-//   return (
-//     <div
-//       style={{
-//         padding: "10px 20px",
-
-//         display: "flex",
-
-//         flexDirection: "column",
-
-//         gap: "15px",
-//       }}
-//     >
-//       {flatFields.map((field) => (
-//         <div
-//           key={field}
-//           id={`json-${field}`}
-//           onMouseEnter={() => {
-//             let coordinatesData =
-//               data.extraction_json_with_coordinates || data.extraction_json;
-
-//             const coords = coordinatesData?.[field]?.coordinates;
-
-//             if (coords == null) return;
-
-//             handleMouseEnter(field, coordinatesData?.[field]?.page_num);
-//           }}
-//           onMouseLeave={handleMouseLeave}
-//         >
-//           <TextInput
-//             id={field.toLowerCase().replace(/\s+/g, "-")}
-//             type="text"
-//             labelText={field}
-//             value={
-//               typeof formData[field] === "object"
-//                 ? formData[field]?.value || ""
-//                 : formData[field] || ""
-//             }
-//             onChange={(e) => handleInputChange(field, e.target.value)}
-//           />
-//         </div>
-//       ))}
-
-//       <Accordion>
-//         {sectionData.map((entry, index) => {
-//           const dynamicTitleRaw = titleField ? entry?.[titleField] : null;
-
-//           const dynamicTitle =
-//             typeof dynamicTitleRaw === "object" && dynamicTitleRaw !== null
-//               ? dynamicTitleRaw.value || `${schema.sectionTitle} ${index + 1}`
-//               : dynamicTitleRaw || `${schema.sectionTitle} ${index + 1}`;
-
-//           return (
-//             <AccordionItem
-//               key={`${schema.sectionKey}-${index}`}
-//               title={dynamicTitle}
-//             >
-//               {schema.sectionFields.map((field) => (
-//                 <div
-//                   key={`${field}-${index}`}
-//                   id={`json-${field}-${index}`}
-//                   onMouseEnter={() => {
-//                     let coordinatesData =
-//                       data.extraction_json_with_coordinates ||
-//                       data.extraction_json;
-
-//                     const coords =
-//                       coordinatesData?.[schema.sectionKey]?.[index]?.[field]
-//                         ?.coordinates ||
-//                       coordinatesData?.[schema.sectionKey]?.[index]
-//                         ?.coordinates;
-
-//                     if (coords == null) return;
-
-//                     handleMouseEnter(
-//                       `${field}-${index}`,
-
-//                       coordinatesData?.[schema.sectionKey]?.[index]?.[field]
-//                         ?.page_num ||
-//                         coordinatesData?.[schema.sectionKey]?.[index]?.page_num
-//                     );
-//                   }}
-//                   onMouseLeave={handleMouseLeave}
-//                 >
-//                   <TextInput
-//                     id={`${field.toLowerCase()}-${index}`}
-//                     type="text"
-//                     labelText={field.replace(/([A-Z])/g, " $1").trim()}
-//                     value={
-//                       typeof entry[field] === "object"
-//                         ? entry[field]?.value || ""
-//                         : entry[field] || ""
-//                     }
-//                     onChange={(e) =>
-//                       handleSectionChange(index, field, e.target.value)
-//                     }
-//                   />
-//                 </div>
-//               ))}
-//             </AccordionItem>
-//           );
-//         })}
-//       </Accordion>
-//     </div>
-//   );
-// };
-
-// export default GenericInputFields;
-
-
-
 import { 
   Accordion, 
   AccordionItem, 
@@ -268,18 +93,43 @@ const GenericInputFields = ({ data, schema, setHoveredKey }) => {
   const sectionData = formData[schema.sectionKey] || [];
   const titleField = schema.sectionTitleField;
 
+  // Format date from YYYY-MM-DD to MM/DD/YYYY for Carbon DatePicker
+  const formatDateForPicker = (dateStr) => {
+    if (!dateStr) return '';
+    if (typeof dateStr === 'string' && dateStr.includes('-')) {
+      const [year, month, day] = dateStr.split('-');
+      return `${month}/${day}/${year}`;
+    }
+    return dateStr;
+  };
+
+  // Format date from MM/DD/YYYY to YYYY-MM-DD for storage
+  const formatDateForStorage = (dateStr) => {
+    if (!dateStr) return '';
+    if (typeof dateStr === 'string' && dateStr.includes('/')) {
+      const [month, day, year] = dateStr.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return dateStr;
+  };
+
   // Render appropriate input based on field type
   const renderFieldInput = (field, value) => {
     const stringValue = typeof value === "object" ? value?.value || "" : value || "";
     
     // Currency fields
     if (field.includes('Amount') || field.includes('Price') || field.includes('Total') || field.includes('Tax')) {
+      // Fix NumberInput onChange handler
+      const handleNumberChange = (event, { value }) => {
+        handleInputChange(field, parseFloat(value) || 0);
+      };
+
       return (
         <NumberInput
           id={field.toLowerCase().replace(/\s+/g, "-")}
           label={field}
-          value={stringValue}
-          onChange={(e) => handleInputChange(field, e.imaginaryTarget.value)}
+          value={parseFloat(stringValue) || 0}
+          onChange={handleNumberChange}
           step={0.01}
         />
       );
@@ -287,6 +137,8 @@ const GenericInputFields = ({ data, schema, setHoveredKey }) => {
     
     // Date fields
     else if (field.includes('Date') || field.includes('period')) {
+      const formattedDate = formatDateForPicker(stringValue);
+      
       return (
         <DatePicker
           dateFormat="m/d/Y"
@@ -296,8 +148,11 @@ const GenericInputFields = ({ data, schema, setHoveredKey }) => {
             id={field.toLowerCase().replace(/\s+/g, "-")}
             placeholder="mm/dd/yyyy"
             labelText={field}
-            value={stringValue}
-            onChange={(e) => handleInputChange(field, e.target.value)}
+            value={formattedDate}
+            onChange={(event) => {
+              const newDate = formatDateForStorage(event.target.value);
+              handleInputChange(field, newDate);
+            }}
           />
         </DatePicker>
       );
@@ -345,12 +200,17 @@ const GenericInputFields = ({ data, schema, setHoveredKey }) => {
     // Boolean fields
     else if (field.includes('Approval Required')) {
       const boolValue = stringValue === 'true' || stringValue === true;
+      
+      const handleCheckboxChange = (checked) => {
+        handleInputChange(field, checked);
+      };
+
       return (
         <Checkbox
           id={field.toLowerCase().replace(/\s+/g, "-")}
           labelText={field}
           checked={boolValue}
-          onChange={(checked) => handleInputChange(field, checked)}
+          onChange={handleCheckboxChange}
         />
       );
     }
@@ -364,6 +224,64 @@ const GenericInputFields = ({ data, schema, setHoveredKey }) => {
           labelText={field}
           value={stringValue}
           onChange={(e) => handleInputChange(field, e.target.value)}
+        />
+      );
+    }
+  };
+
+  // Render section field input (for line items)
+  const renderSectionFieldInput = (field, value, index) => {
+    const stringValue = typeof value === "object" ? value?.value || "" : value || "";
+    
+    // Currency fields in sections
+    if (field.includes('Amount') || field.includes('Price') || field.includes('Total') || field.includes('Tax')) {
+      const handleNumberChange = (event, { value }) => {
+        handleSectionChange(index, field, parseFloat(value) || 0);
+      };
+
+      return (
+        <NumberInput
+          id={`${field.toLowerCase().replace(/\s+/g, "-")}-${index}`}
+          label={field}
+          value={parseFloat(stringValue) || 0}
+          onChange={handleNumberChange}
+          step={0.01}
+        />
+      );
+    }
+    
+    // Date fields in sections
+    else if (field.includes('Date') || field.includes('period')) {
+      const formattedDate = formatDateForPicker(stringValue);
+      
+      return (
+        <DatePicker
+          dateFormat="m/d/Y"
+          datePickerType="single"
+        >
+          <DatePickerInput
+            id={`${field.toLowerCase().replace(/\s+/g, "-")}-${index}`}
+            placeholder="mm/dd/yyyy"
+            labelText={field}
+            value={formattedDate}
+            onChange={(event) => {
+              const newDate = formatDateForStorage(event.target.value);
+              handleSectionChange(index, field, newDate);
+            }}
+          />
+        </DatePicker>
+      );
+    }
+    
+    // Default text input for sections
+    else {
+      return (
+        <TextInput
+          id={`${field.toLowerCase().replace(/\s+/g, "-")}-${index}`}
+          type="text"
+          labelText={field}
+          value={stringValue}
+          onChange={(e) => handleSectionChange(index, field, e.target.value)}
         />
       );
     }
@@ -480,7 +398,7 @@ const GenericInputFields = ({ data, schema, setHoveredKey }) => {
                         }}
                         onMouseLeave={handleMouseLeave}
                       >
-                        {renderFieldInput(field, entry[field])}
+                        {renderSectionFieldInput(field, entry[field], index)}
                       </div>
                     ))}
                   </div>
